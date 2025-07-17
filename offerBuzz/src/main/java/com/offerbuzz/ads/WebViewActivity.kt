@@ -19,6 +19,9 @@ import androidx.activity.OnBackPressedCallback
 import com.offerbuzz.ads.apis.Apis
 import com.offerbuzz.ads.apis.Notification
 import com.offerbuzz.ads.models.LoadingDialog
+import android.os.Build
+import android.provider.Settings
+import java.security.MessageDigest
 
 
 class WebViewActivity : AppCompatActivity() {
@@ -50,6 +53,8 @@ class WebViewActivity : AppCompatActivity() {
 
         notification = Notification(this)
         loadingDialog = LoadingDialog(this)
+
+        Log.d("generateDeviceFingerprint",generateDeviceFingerprint(this))
 
 
         binding.webView.webViewClient = object : WebViewClient() {
@@ -152,5 +157,30 @@ class WebViewActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         notification.check(token)
+    }
+
+    @SuppressLint("HardwareIds")
+    fun generateDeviceFingerprint(context: Context): String {
+        val androidId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+        val deviceInfo = listOf(
+            Build.BOARD,
+            Build.BRAND,
+            Build.DEVICE,
+            Build.DISPLAY,
+            Build.HOST,
+            Build.ID,
+            Build.MANUFACTURER,
+            Build.MODEL,
+            Build.PRODUCT,
+            Build.TAGS,
+            Build.TYPE,
+            Build.USER,
+            androidId
+        ).joinToString(separator = ":")
+
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(deviceInfo.toByteArray())
+
+        return hashBytes.joinToString("") { "%02x".format(it) }
     }
 }

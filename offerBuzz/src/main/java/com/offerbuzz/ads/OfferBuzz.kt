@@ -11,18 +11,32 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.provider.Settings
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
-import com.offerbuzz.ads.`interface`.InitializeCallback
 import kotlinx.coroutines.withContext
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import com.offerbuzz.ads.apis.Apis
 import com.offerbuzz.ads.apis.Notification
-import com.offerbuzz.ads.`interface`.StartOfferCallback
 
 class OfferBuzz(private val context: Context, private val appId:String, private val userId:String, private val isWebView:Boolean?=true) {
 
     private var sdk = false
     private lateinit var notification: Notification
+
+    interface InitializeCallback {
+        fun onSuccess(message: String?)
+        fun onFailure(error: String?)
+    }
+
+    interface StartOfferCallback {
+        /** Called once the Offer Activity was successfully launched */
+        fun onSuccess()
+
+        /**
+         * Called if we couldn’t launch, e.g. because the SDK wasn’t initialized yet.
+         * @param reason a human-readable error message
+         */
+        fun onError(reason: String)
+    }
 
     private suspend fun fetchGoogleAdId(context: Context): String? = withContext(Dispatchers.IO) {
         try {
@@ -35,6 +49,7 @@ class OfferBuzz(private val context: Context, private val appId:String, private 
     }
 
     fun initializeSdk(initializeCallback : InitializeCallback){
+        notification = Notification(context)
         CoroutineScope(Dispatchers.Main).launch {
             val gaid = fetchGoogleAdId(context) ?: ""
             try {
@@ -61,12 +76,14 @@ class OfferBuzz(private val context: Context, private val appId:String, private 
                         Log.d("SDK_INIT","token $token")
 
                         initializeCallback.onSuccess("$title $message")
+                        notification.check(token)
                     } else {
                         Log.e("SDK_INIT", "Failed: ${body?.title}  ${body?.message}")
-                        initializeCallback.onSuccess(body?.title+" "+body?.message)
+                        initializeCallback.onFailure(body?.title+" "+body?.message)
                     }
                 } else {
                     Log.e("SDK_INIT", "HTTP ${resp.code()}: ${resp.errorBody()?.string()}")
+                    initializeCallback.onFailure("HTTP ${resp.code()}: ${resp.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
                 Log.e("SDK_INIT", "Network error", e)

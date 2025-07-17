@@ -7,8 +7,6 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.offerbuzz.ads.OfferBuzz
-import com.offerbuzz.ads.`interface`.InitializeCallback
-import com.offerbuzz.ads.`interface`.StartOfferCallback
 import com.offerbuzz.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -25,7 +23,7 @@ class MainActivity : AppCompatActivity() {
 
         offerBuzz = OfferBuzz(this,"39906ac4",getDeviceId(this))
 
-        offerBuzz.initializeSdk(object : InitializeCallback {
+        offerBuzz.initializeSdk(object : OfferBuzz.InitializeCallback {
             override fun onSuccess(message: String?) {
                 Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
             }
@@ -38,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.button.setOnClickListener {
             if (offerBuzz.isAvailable()){
-                offerBuzz.startOffer(object : StartOfferCallback {
+                offerBuzz.startOffer(object : OfferBuzz.StartOfferCallback {
                     override fun onSuccess() {
 
                     }
